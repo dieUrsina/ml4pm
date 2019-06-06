@@ -150,7 +150,7 @@ Implement the linear transformation input $\mathbf{Z}$ of the next layer with th
 def single_layer_forward_propagation(A_prev, W_curr, b_curr, activation="relu"):
     # calculation of the input value for the activation function
     
-    Z_curr = W_curr * A_prev + b_curr
+    Z_curr = np.dot(W_curr, A_prev) + b_curr
     
     # selection of activation function
     if activation is "relu":
@@ -222,7 +222,7 @@ def get_cost_value(Y_hat, Y):
     # number of examples
     m = Y_hat.shape[1]
     # calculation of the cost according to the formula
-    cost = sum([y * np.log(y_hat) + (1 - y) * log(1 - y_hat) for y, y_hat in zip(Y, Y_hat)]) / len(Y) * -1
+    cost = np.sum([y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat) for y, y_hat in zip(Y, Y_hat)]) / m * -1
     return np.squeeze(cost)
 ```
 
@@ -276,14 +276,16 @@ $$ \sigma^{'}(z) = \sigma (z)\cdot (1-\sigma(z)) $$
 # STUDENT
 
 def relu_backward(dA, Z):
-    dZ = #your_code
+    z_val = np.where(Z > 0, 1, 0)
+    dZ = np.multiply(dA, z_val)
     
     return dZ;
 
 def sigmoid_backward(dA, Z):
     # tip: make use of the "sigmoid"-function we implemented above 
-    sig = #your_code
-    dZ = #your_code
+    sig = sigmoid(Z)
+    z_val = sig * (1 - sig)
+    dZ = np.multiply(dA, z_val)
     return dZ
 ```
 
@@ -321,11 +323,11 @@ def single_layer_backward_propagation(dA_curr, W_curr, b_curr, Z_curr, A_prev, a
     dZ_curr = backward_activation_func(dA_curr, Z_curr)
     
     # derivative of the matrix W
-    dW_curr = #your_code
+    dW_curr = np.dot(dZ_curr, A_prev.T) / m
     # derivative of the vector b
-    db_curr = #your_code
+    db_curr = np.sum(dZ_curr, keepdims=True) / m
     # derivative of the matrix A_prev
-    dA_prev = #your_code
+    dA_prev = np.dot(W_curr.T, dZ_curr)
 
     return dA_prev, dW_curr, db_curr
 ```
@@ -385,7 +387,7 @@ def full_backward_propagation(Y_hat, Y, memory, params_values, nn_architecture):
         W_curr = params_values["W" + str(layer_idx_curr)]
         b_curr = params_values["b" + str(layer_idx_curr)]
         
-        dA_prev, dW_curr, db_curr = #your_code
+        dA_prev, dW_curr, db_curr = single_layer_backward_propagation(dA_curr, W_curr, b_curr, Z_curr, A_prev, activ_function_curr)
         
         grads_values["dW" + str(layer_idx_curr)] = dW_curr
         grads_values["db" + str(layer_idx_curr)] = db_curr
@@ -414,8 +416,8 @@ def update(params_values, grads_values, nn_architecture, learning_rate):
 
     # iteration over network layers
     for layer_idx, layer in enumerate(nn_architecture, 1):
-        params_values["W" + str(layer_idx)] = #your_code        
-        params_values["b" + str(layer_idx)] = #your_code 
+        params_values["W" + str(layer_idx)] = params_values["W" + str(layer_idx)] - learning_rate * grads_values["dW" + str(layer_idx)]
+        params_values["b" + str(layer_idx)] = params_values["b" + str(layer_idx)] - learning_rate * grads_values["db" + str(layer_idx)] 
 
     return params_values;
 ```
@@ -429,7 +431,7 @@ Now we have everything we need to train our model. The final task of this exerci
 def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False):
     # initiation of neural net parameters
     
-    params_values = #your_code
+    params_values = init_layers(nn_architecture)
     
     # initiation of lists storing the history 
     # of metrics calculated during the learning process 
@@ -439,7 +441,7 @@ def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False):
     # performing calculations for subsequent iterations
     for i in range(epochs):
         # step forward
-        Y_hat, cache = #your_code
+        Y_hat, cache = full_forward_propagation(X, params_values, nn_architecture)
         
         # calculating metrics and saving them in history
         cost = get_cost_value(Y_hat, Y)
@@ -448,10 +450,10 @@ def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False):
         accuracy_history.append(accuracy)
         
         # step backward - calculating gradient
-        grads_values = #your_code
+        grads_values = full_backward_propagation(Y_hat, Y, cache, params_values, nn_architecture)
         
         # updating model state
-        params_values = #your_code
+        params_values = update(params_values, grads_values, nn_architecture, learning_rate)
         
         if(i % 50 == 0):
             if(verbose):
