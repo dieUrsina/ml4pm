@@ -131,11 +131,11 @@ Implement the sigmoid and relu functions, which take the linear transformation Z
 ```python
 # STUDENT
 def sigmoid(Z):
-    sig = #your_code
+    sig = 1 / (1 + np.exp(-Z))
     return sig
 
 def relu(Z):
-    relu = #your_code
+    relu = np.maximum(0, Z)
     return relu
 ```
 
@@ -150,7 +150,7 @@ Implement the linear transformation input $\mathbf{Z}$ of the next layer with th
 def single_layer_forward_propagation(A_prev, W_curr, b_curr, activation="relu"):
     # calculation of the input value for the activation function
     
-    Z_curr = #your_code
+    Z_curr = W_curr * A_prev + b_curr
     
     # selection of activation function
     if activation is "relu":
@@ -176,7 +176,7 @@ Call the forward propagation of a single layer.
 def full_forward_propagation(X, params_values, nn_architecture):
     # creating a temporary memory to store the information needed for a backward step
     memory = {}
-    # X vector is the activation for layer 0 
+    # X vector is the activation for layer 0 => the input
     A_curr = X
     
     # iteration over network layers
@@ -194,7 +194,7 @@ def full_forward_propagation(X, params_values, nn_architecture):
         b_curr = params_values["b" + str(layer_idx)]
         # calculation of activation for the current layer
         
-        A_curr, Z_curr = #your_code
+        A_curr, Z_curr = single_layer_forward_propagation(A_prev, W_curr, b_curr, activ_function_curr)
         
         # saving calculated values in the memory
         memory["A" + str(idx)] = A_prev
@@ -222,7 +222,7 @@ def get_cost_value(Y_hat, Y):
     # number of examples
     m = Y_hat.shape[1]
     # calculation of the cost according to the formula
-    cost = #your_code
+    cost = sum([y * np.log(y_hat) + (1 - y) * log(1 - y_hat) for y, y_hat in zip(Y, Y_hat)]) / len(Y) * -1
     return np.squeeze(cost)
 ```
 
@@ -457,7 +457,7 @@ def train(X, Y, nn_architecture, epochs, learning_rate, verbose=False):
             if(verbose):
                 print("Iteration: {:05} - cost: {:.5f} - accuracy: {:.5f}".format(i, cost, accuracy))
             
-    return params_values
+    return params_values, cost_history, accuracy_history
 ```
 
 ```python
