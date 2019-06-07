@@ -222,7 +222,9 @@ def get_cost_value(Y_hat, Y):
     # number of examples
     m = Y_hat.shape[1]
     # calculation of the cost according to the formula
-    cost = np.sum([y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat) for y, y_hat in zip(Y, Y_hat)]) / m * -1
+    # no need to use generator, bc numpy is smart
+    #cost = np.sum([y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat) for y, y_hat in zip(Y, Y_hat)]) / m * -1
+    cost = np.sum(Y * np.log(Y_hat) + (1 - Y) * np.log(1 - Y_hat)) / m * -1
     return np.squeeze(cost)
 ```
 
@@ -277,6 +279,7 @@ $$ \sigma^{'}(z) = \sigma (z)\cdot (1-\sigma(z)) $$
 
 def relu_backward(dA, Z):
     z_val = np.where(Z > 0, 1, 0)
+    # multiply mit stern ersetzbar
     dZ = np.multiply(dA, z_val)
     
     return dZ;
@@ -325,7 +328,8 @@ def single_layer_backward_propagation(dA_curr, W_curr, b_curr, Z_curr, A_prev, a
     # derivative of the matrix W
     dW_curr = np.dot(dZ_curr, A_prev.T) / m
     # derivative of the vector b
-    db_curr = np.sum(dZ_curr, keepdims=True) / m
+    # man könnte auch np.mean nutzen, statt durch m zu teilen
+    db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
     # derivative of the matrix A_prev
     dA_prev = np.dot(W_curr.T, dZ_curr)
 
@@ -492,12 +496,19 @@ plt.plot(np.arange(10000), np.array(accuracy_history))
 What can you say about the learning progress of the model?
 
 
+It goes normal, although less epochs would still be enough, since after about epoch 7000 there is no change and accuracy 1 has been reached.
+
+
 ### Question 2:
 Can you find out how many trainable parameters our model contains? Do you think that this number of parameters is appropriate for our classification task?
 
 ```python
-
+np.sum([x.size for x in params_values.values()])
 ```
+
+Trainable parameters: 5226. I think less parameters would be enough, too, as the shape of the data already indicates, that it should be not too hard (although non-linear) to seperate the two classes. <br>
+The net is still good, with only input- and output layer.
+
 
 Congratulations, you made it through the sixth tutorial of this course!
 
