@@ -7,9 +7,9 @@ jupyter:
       format_version: '1.1'
       jupytext_version: 1.1.1
   kernelspec:
-    display_name: Python 3
+    display_name: Python (ml_in_prec_med)
     language: python
-    name: python3
+    name: ml_in_prec_med
 ---
 
 # Tutorial 7: Tensorflow and neural networks
@@ -317,9 +317,12 @@ def create_placeholders(n_x, n_y):
     - You will use None because it let's us be flexible on the number of examples you will for the placeholders.
       In fact, the number of examples during test/train is different.
     """
-        
-    X = #your_code
-    Y = #your_code
+    
+    # x = tf.placeholder(tf.float32, name='x')
+
+    
+    X = tf.placeholder(tf.float32, shape=[n_x, None], name="X")
+    Y = tf.placeholder(tf.float32, shape=[n_y, None], name="Y")
     
     return X, Y
 ```
@@ -378,10 +381,10 @@ def initialize_parameters(architecture):
     
     for i, param in enumerate(architecture):
         
-        input_dim = #your_code
-        output_dim = #your_code
+        input_dim = param["input_dim"]
+        output_dim = param["output_dim"]
         
-        W = tf.get_variable("W{}".format(i+1), [output_dim, input_dim], initializer=tf.initializers.he_normal(i))
+        W = tf.get_variable("W{}".format(i+1), [output_dim, input_dim], initializer=tf.initializers.he_normal(seed=i))
         b = tf.get_variable("b{}".format(i+1), [output_dim, 1], initializer=tf.zeros_initializer())
         
         
@@ -458,7 +461,7 @@ def forward_propagation(X, architecture, parameters):
     for i, layer_parameters in enumerate(parameters):
         
         # linear transformation
-        Z = #your_code
+        Z = tf.add(tf.matmul(layer_parameters["weights"], A), layer_parameters["bias"])
         
         if i == len(parameters) - 1:
             # return Z if we are in the last layer
@@ -466,7 +469,7 @@ def forward_propagation(X, architecture, parameters):
         else:
             # otherwise apply the activation function
             if architecture[i]['activation'] == 'relu':
-                A = #your_code
+                A = tf.nn.relu(Z)
             else:
                 raise NotImplementedError('activation '+architecture[i]['activation']+' not implemented!')
                 
@@ -524,9 +527,9 @@ def compute_loss(Y, Z, activation='sigmoid'):
     labels = tf.transpose(Y)
     
     if activation == 'sigmoid':
-        loss = #your_code
+        loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits))
     elif activation == 'softmax':
-        loss = #your_code
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits))
     else:
         raise ValueError('activation has to be either sigmoid or softmax!')
         
@@ -557,13 +560,14 @@ def model(X_train, Y_train, X_test, Y_test, architecture, learning_rate = 0.0001
     X, Y = create_placeholders(n_x, n_y)
     
     # Initialize objects for the parameters (weights and biases) with our function from above
-    parameters = #your_code
+    parameters = initialize_parameters(architecture)
     
     # Forward propagation: Build the forward propagation in the tensorflow graph with our function from above
-    Z_n = #your_code
+    Z_n = forward_propagation(X, architecture, parameters)
     
     # Loss function: Add loss function to tensorflow graph
-    loss = #your_code
+    activation = architecture[-1]["activation"]
+    loss = compute_loss(Y, Z_n, activation=activation)
     
     # Backpropagation: Define the tensorflow optimizer. Use an AdamOptimizer
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
@@ -623,7 +627,7 @@ def model(X_train, Y_train, X_test, Y_test, architecture, learning_rate = 0.0001
             correct_prediction = tf.equal(tf.argmax(Z_n), tf.argmax(Y))
             
         # Calculate accuracy on the test set. Hint: use tensorflows reduce-mean() and cast function
-        accuracy = #your_code
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
         print ("Train Accuracy:", accuracy.eval({X: X_train, Y: Y_train}))
         print ("Test Accuracy:", accuracy.eval({X: X_test, Y: Y_test}))
