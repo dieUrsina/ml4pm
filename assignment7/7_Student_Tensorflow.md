@@ -334,7 +334,8 @@ NN_ARCHITECTURE = [
     {"input_dim": 2352, "output_dim": 25, "activation": "relu"},
     {"input_dim": 25, "output_dim": 25, "activation": "relu"},
     {"input_dim": 25, "output_dim": 25, "activation": "relu"},
-    {"input_dim": 25, "output_dim": 3, "activation": "softmax"},
+    #{"input_dim": 25, "output_dim": 3, "activation": "softmax"},
+    {"input_dim": 25, "output_dim": 3, "activation": "sigmoid"},
 ] 
 ```
 
@@ -523,13 +524,15 @@ def compute_loss(Y, Z, activation='sigmoid'):
      
     """
     # to fit the tensorflow requirement for tf.nn.softmax_cross_entropy_with_logits(...,...)
-    logits = tf.transpose(Z)
-    labels = tf.transpose(Y)
-    
+    inputs = {
+        'logits': tf.transpose(Z),
+        'labels': tf.transpose(Y)
+    }
     if activation == 'sigmoid':
-        loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=logits))
+        loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(**inputs))
     elif activation == 'softmax':
-        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits))
+        #loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits))
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(**inputs))
     else:
         raise ValueError('activation has to be either sigmoid or softmax!')
         
@@ -636,15 +639,21 @@ def model(X_train, Y_train, X_test, Y_test, architecture, learning_rate = 0.0001
 ```
 
 ```python
-model(X_train, y_train, X_test, y_test, NN_ARCHITECTURE)
+model(X_train, y_train, X_test, y_test, NN_ARCHITECTURE, num_epochs=300, minibatch_size=100)
 ```
 
 **Question:**  
 Play around with the architecture, (i.e. add another layer), learning rate, epochs, ... as far the your computer allows it. Did you find a constellation, that gives a better result? 
 
-```python
 
-```
+If we set the learning rate lower, for example to 0.00005, theoretically the accuracy should improve, because the gradient descent descends more slowly and precisely. <br>
+Small mini-batches learn quicker, but larger mini-batches should perform better over time. Therefore, we increased the mini-batch size to 128 and it improved the results. Decresing the mini-batch size worsened the results. <br>
+Changing the activation function of the last layer from softmax to sigmoid improved the results quiet strongly. <br>
+Decreasing the number of epochs didn't worsen the outcome, as the algorithm converges quite soon. Especially when the learning rate was increased to speed up training.<br>
+For example, when we trained with the learning rate 0.01, just 3 epochs, and mini-batch size 128 the test accuracy was 0.858. The net had only input layer and output layer. The activation of the output layer was sigmoid.
+Increasing the number of epochs from 3 to 300 increases the test accuracy only by 0.1, yielding 0.8648. The Training accuracy is then by 0.872.<br>
+Increasing the minibatch size improved the result, while decreasing the number of epochs didn't worsen the outcome, as the algorithm converges quite soon. Especially when the learning rate was increased to speed up training. For example a neural network with learning rate 0.01, number of epochs 3 and mini batch size 128 still had a train accuracy of 86.83% and a test accuracy of 85.89%.
+
 
 Congratulations, you made it through the seventh tutorial of this course!
 
